@@ -1,0 +1,7 @@
+Both players place there ships on the board
+The most important part is ship placing validation
+Player hit a cell on the board of the opponent
+Check if there was a part of ship at that cell, response the player accordingly
+If a part is hit check if that ship is destroyed
+If a ship is destroyed check if the game is over or not yet
+The game is over when any of the player destroys all of the opponent ships
