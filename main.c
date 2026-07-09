@@ -1,73 +1,13 @@
 /* where ever *** used mean passed by reference, ** mean passed by value like const */
-#include <stdbool.h>
+#include "main.h"
+// #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-/* for now not making it generic */
-#define BOARD_SIZE 10
-#define TOTAL_SHIPS 5
-
-struct Board_Cell;
-struct Ship_Cell;
-
-/* initialization functions must be called first */
-void allocate_memory(struct Board_Cell ***board, struct Ship_Cell ***ships);
-void initialize_board(struct Board_Cell ***board);
-void initialize_ships(struct Ship_Cell ***ships);
-
-/* ship_placement and validation */
-void human_place_ships(struct Board_Cell ***board, struct Ship_Cell ***ships);
-void computer_place_ships(struct Board_Cell ***board, struct Ship_Cell ***ships);
-/* this will first make sure the selected place can have the ship */
-void ship_place_selection(struct Board_Cell **board, int ship_length, int *row_number, int *column_number);
-bool valid_ship_bounds(struct Board_Cell **board, int ship_length, int row_number, int column_number);
-bool has_ship_part(struct Board_Cell **board, int ship_length, int row_number, int column_number);
-/* once the place has been chosen correctly simply place the ship */
-void place_ship(struct Board_Cell ***board, int ship_length, int row_number, int column_number);
-
-/* main game for turn and hitting on ship */
-void human_attack(struct Board_Cell ***computer_board, struct Ship_Cell ***computer_ships);
-void computer_attack(struct Board_Cell **human_board, struct Ship_Cell **human_ships);
-bool is_bounded_attack(struct Board_Cell **board, int row_number, int column_number);
-bool is_cell_already_attacked(struct Board_Cell **board, int row_number, int column_number);
-bool is_attack_on_ship(struct Board_Cell **board, int row_number, int column_number);
-bool is_ship_destroyed(struct Ship_Cell **ships, int ship_number, int ship_length);
-bool is_game_over(struct Ship_Cell **opponents_ships);
-
-/* destruction of the allocated memory */
-void destroy_memory(struct Board_Cell ***board, struct Ship_Cell ***ships);
-void destroy_board(struct Board_Cell ***board);
-void destroy_ships(struct Ship_Cell ***ship);
-
-/* utility functions */
-void display_board(struct Board_Cell **board);
-void display_ships(struct Ship_Cell **ships);
-void menu(const struct Board_Cell **board, const struct Ship_Cell **ships);
-
 int main(int argc, char *argv[]) {
-  struct Board_Cell **board;
-  initialize_board(&board);
-  display_board(board);
-  struct Ship_Cell **ships;
-  initialize_ships(&ships);
-  display_ships(ships);
-  human_place_ships(&board, &ships);
-  display_board(board);
-  display_ships(ships);
+  start_game();
   return EXIT_SUCCESS;
 }
-
-struct Board_Cell {
-  /* it will store in 1-based index, 0 show no ship/ship_part here */
-  bool is_occupied;
-  bool is_attacked;
-  int ship_number;
-  int ship_part_number;
-};
-
-struct Ship_Cell {
-  bool destroyed;
-};
 
 void display_board(struct Board_Cell **board) {
   printf("The board:\n");
@@ -184,12 +124,39 @@ void human_place_ships(struct Board_Cell ***board, struct Ship_Cell ***ships) {
   return;
 }
 
-void human_attack(struct Board_Cell ***computer_board, struct Ship_Cell ***computer_ships) {
+void human_attack(struct Board_Cell ***board, struct Ship_Cell ***ships) {
   int row_number, column_number;
-  printf("row_number: ");
-  scanf("%d", &row_number);
-  printf("column_number: ");
-  scanf("%d", &column_number);
+  get_correct_attack(*board, &row_number, &column_number);
+  if (is_attack_on_ship(*board, row_number, column_number)) {
+    printf("You hit the ship...\n");
+    int ship_number = (*board)[row_number - 1][column_number - 1].ship_number;
+    int ship_part_number = (*board)[row_number - 1][column_number - 1].ship_part_number;
+    (*ships)[ship_number - 1][ship_part_number - 1].destroyed = true;
+    if (is_ship_destroyed(*ships, ship_number, ship_number) == true) {
+      printf("You destroyed the ship...\n");
+    }
+  } else {
+    printf("You missed the ship...\n");
+  }
+  (*board)[row_number - 1][column_number - 1].is_attacked = true;
+}
+
+void get_correct_attack(struct Board_Cell **board, int *row_number, int *column_number) {
+  bool is_correct_cell_attacked = false;
+  while (!is_correct_cell_attacked) {
+    printf("row_number: ");
+    scanf("%d", row_number);
+    printf("column_number: ");
+    scanf("%d", column_number);
+    if (is_bounded_attack(board, *row_number, *column_number) == false) {
+      printf("Attack out of bounds of the board...\n");
+    } else if (is_cell_already_attacked(board, *row_number, *column_number) == true) {
+      printf("Cell is already attacked...\n");
+    } else {
+      is_correct_cell_attacked = true;
+    }
+  }
+  return;
 }
 
 bool is_bounded_attack(struct Board_Cell **human_board, int row_number, int column_number) {
@@ -202,9 +169,9 @@ bool is_bounded_attack(struct Board_Cell **human_board, int row_number, int colu
 
 bool is_cell_already_attacked(struct Board_Cell **board, int row_number, int column_number) {
   if (board[row_number - 1][column_number - 1].is_attacked == false) {
-    return true;
-  } else {
     return false;
+  } else {
+    return true;
   }
 }
 
@@ -227,7 +194,7 @@ bool is_ship_destroyed(struct Ship_Cell **ships, int ship_number, int ship_lengt
 
 bool is_game_over(struct Ship_Cell **opponents_ships) {
   for (int ship_number = 1; ship_number <= TOTAL_SHIPS; ++ship_number) {
-    if (is_ship_destroyed(opponents_ships, ship_number, ship_number)) {
+    if (is_ship_destroyed(opponents_ships, ship_number, ship_number) == false) {
       return false;
     }
   }
@@ -257,4 +224,17 @@ void destroy_ships(struct Ship_Cell ***ships) {
   free(*ships);
   *ships = NULL;
   ships = NULL;
+}
+
+void start_game(void) {
+  struct Board_Cell **board;
+  // display_board(board);
+  struct Ship_Cell **ships;
+  allocate_memory(&board, &ships);
+  display_board(board);
+  display_ships(ships);
+  human_place_ships(&board, &ships);
+  display_board(board);
+  display_ships(ships);
+  return;
 }
