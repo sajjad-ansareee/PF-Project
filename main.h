@@ -3,6 +3,7 @@
 #include "board_cell.h"
 #include "ship_cell.h"
 #include <stdbool.h>
+#include <time.h>
 
 /* for now not making it generic */
 #define BOARD_SIZE 10
@@ -16,6 +17,7 @@ void initialize_ships(struct Ship_Cell ***ships);
 /* ship_placement and validation */
 void human_place_ships(struct Board_Cell ***board, struct Ship_Cell ***ships);
 void computer_place_ships(struct Board_Cell ***board, struct Ship_Cell ***ships);
+void computer_ship_place_selection(struct Board_Cell **board, int ship_length, int *row_number, int *column_number);
 /* this will first make sure the selected place can have the ship */
 void ship_place_selection(struct Board_Cell **board, int ship_length, int *row_number, int *column_number);
 bool valid_ship_bounds(struct Board_Cell **board, int ship_length, int row_number, int column_number);
